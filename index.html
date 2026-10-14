@@ -3,19 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>web-app-ext matrix v3</title>
+<title>web-app-ext matrix v4</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 body { font-family: monospace; background: #fff; color: #111; padding: 6px; font-size: 11px; margin: 0; }
 #out { max-height: 100vh; overflow-y: auto; }
 .log { border-bottom: 1px solid #eee; padding: 2px 0; word-break: break-all; }
 .ok { color: green; } .bad { color: #b00; } .dim { color: #888; }
-#run { position: fixed; top: 0; right: 0; z-index: 9; margin: 2px; padding: 6px; font-size: 11px; }
 </style>
 </head>
 <body>
 <div id="out"></div>
-<button id="run">RUN</button>
 <script>
 const WH = 'https://webhook.site/74aa897d-5aac-4477-890c-179212c5e77b';
 const DOM = 'matthewadem.github.io';
@@ -30,7 +28,8 @@ function log(msg, cls) {
   out.scrollTop = out.scrollHeight;
   try { navigator.sendBeacon(WH + '/log', String(seq) + ' ' + msg); } catch(e) {}
 }
-log('probe3 init platform=' + tg.platform + ' v=' + tg.version);
+const hasData = !!tg.initData;
+log('probe4 init platform=' + tg.platform + ' v=' + tg.version + ' initData=' + (hasData ? 'yes' : 'NO'));
 tg.ready();
 
 const CASES = [
@@ -60,8 +59,12 @@ function next() {
   setTimeout(next, 3500);
 }
 tg.onEvent('file_download_requested', ev => log('EV file_download_requested: ' + JSON.stringify(ev), 'dim'));
-document.getElementById('run').onclick = () => { idx = 0; next(); };
-log('probe3 loaded - press RUN');
+if (hasData) {
+  log('autorun in 2s');
+  setTimeout(next, 2000);
+} else {
+  log('no initData - not autorunning');
+}
 </script>
 </body>
 </html>
