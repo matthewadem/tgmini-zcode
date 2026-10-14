@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>web-app-ext matrix v6</title>
+<title>web-app-ext matrix v7</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 body { font-family: monospace; background: #fff; color: #111; padding: 6px; font-size: 11px; margin: 0; }
@@ -31,34 +31,33 @@ function log(msg, cls) {
 function rawEvent(type, data) {
   window.parent.postMessage(JSON.stringify({eventType: type, eventData: data}), '*');
 }
-log('probe6 init platform=' + tg.platform + ' v=' + tg.version + ' initData=' + (tg.initData ? 'yes' : 'NO'));
+log('probe7 init platform=' + tg.platform + ' v=' + tg.version + ' initData=' + (tg.initData ? 'yes' : 'NO'));
 tg.ready();
 tg.onEvent('file_download_requested', ev => log('EV file_download_requested: ' + JSON.stringify(ev), 'dim'));
 
 const CASES = [
-  { id: 'own-ok',       url: 'https://' + DOM + '/tgmini-zcode/m6-own.png' },
-  { id: 'tg-userinfo',  url: 'https://' + DOM + '@web.telegram.org/k/probe_tg.html' },
-  { id: 'tg-direct',    url: 'https://web.telegram.org/k/probe_tg2.html' }
+  { id: 'ctrl-plain',     url: WH + '/ctrl1-plain.png' },
+  { id: 'ctrl-substring', url: 'https://webhook.site/matthewadem.github.io/ctrl2.png' },
+  { id: 'foreign-userinfo', url: 'https://' + DOM + '@webhook.site/74aa897d-5aac-4477-890c-179212c5e77b/ctrl3-foreign.png' },
+  { id: 'tg-userinfo',    url: 'https://' + DOM + '@web.telegram.org/k/' }
 ];
 
 let idx = 0;
 function next() {
   if (idx >= CASES.length) { log('MATRIX DONE', 'ok'); return; }
   const c = CASES[idx++];
-  log('[' + c.id + '] raw postEvent', 'dim');
+  log('[' + c.id + '] posting url=' + c.url, 'dim');
   try {
-    rawEvent('web_app_request_file_download', {url: c.url, file_name: 'probe_' + c.id + '.bin'});
+    rawEvent('web_app_request_file_download', {url: c.url, file_name: 'p7_' + c.id + '.bin'});
     log('[' + c.id + '] posted');
   } catch (e) {
     log('[' + c.id + '] threw: ' + (e && e.message || e), 'bad');
   }
-  setTimeout(next, 8000);
+  setTimeout(next, 13000);
 }
 if (tg.initData) {
   log('autorun in 2s');
   setTimeout(next, 2000);
-} else {
-  log('no initData - not autorunning');
 }
 </script>
 </body>
